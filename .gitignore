@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual env
+.venv/
+mov_env/
+movie/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# Data / models / vector db storage (DON'T COMMIT)
+data/external/
+data/raw/
+data/interim/
+data/processed/
+models/
+qdrant_storage/
+
+# Logs
+logs/
+*.log
+
+# Notebooks checkpoints
+notebooks/.ipynb_checkpoints/
