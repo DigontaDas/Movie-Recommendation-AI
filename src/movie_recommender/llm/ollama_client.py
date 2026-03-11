@@ -13,4 +13,4 @@ def ollama_generate(prompt: str, model: str = "llama3.1:8b", url: str = "http://
 
 
 if __name__ == "__main__":
-    print(ask_ollama("Name one popular sci-fi movie in one sentence."))
+    print(ollama_generate("Name one popular sci-fi movie in one sentence."))
