@@ -14,6 +14,8 @@ movies_df["title"] = movies_df["title"].str.replace(r"\s*\(\d{4}\)$", "", regex=
 
 tags_df["tag"] = tags_df["tag"].str.lower()  # Convert tags to lowercase for consistency
 tag_agg= tags_df.groupby(tags_df["movieId"])["tag"].apply(lambda x: ", ".join(x.unique()))  # Group tags by movieId and join them into a single string
+tag_agg = tag_agg.reset_index()
+tag_agg.columns = ["movieId", "tag_description"]
 movies_df=movies_df.merge(tag_agg,on="movieId",how="left")
 print(tag_agg.head())
 print(f"Movies : {len(movies_df)}")
