@@ -2,15 +2,14 @@ import requests  # library for making HTTP requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"  # the endpoint
 
-def ask_ollama(prompt):
-    payload = {
-        "model": "llama3",      # model name
-        "prompt": prompt,         # the input text
-        "stream": False           # we don't want streaming
-    }
-    
-    response = requests.post(OLLAMA_URL, json=payload)
-    return response.json()["response"]  # parse JSON and get the text
+def ollama_generate(prompt: str, model: str = "llama3.1:8b", url: str = "http://localhost:11434") -> str:
+    r = requests.post(
+        f"{url}/api/generate",
+        json={"model": model, "prompt": prompt, "stream": False},
+        timeout=120,
+    )
+    r.raise_for_status()
+    return r.json()["response"]  # parse JSON and get the text
 
 
 if __name__ == "__main__":
