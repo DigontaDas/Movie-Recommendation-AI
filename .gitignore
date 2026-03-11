@@ -16,6 +16,7 @@ Thumbs.db
 
 # Env
 .env
+.env.example
 
 # Data / models / vector db storage (DON'T COMMIT)
 data/external/
@@ -24,6 +25,7 @@ data/interim/
 data/processed/
 models/
 qdrant_storage/
+chroma_storage/
 
 # Logs
 logs/
