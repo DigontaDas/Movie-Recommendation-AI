@@ -1,6 +1,4 @@
-import requests  # library for making HTTP requests
-
-OLLAMA_URL = "http://localhost:11434/api/generate"  # the endpoint
+import requests
 
 def ollama_generate(prompt: str, model: str = "llama3.1:8b", url: str = "http://localhost:11434") -> str:
     r = requests.post(
@@ -9,7 +7,7 @@ def ollama_generate(prompt: str, model: str = "llama3.1:8b", url: str = "http://
         timeout=120,
     )
     r.raise_for_status()
-    return r.json()["response"]  # parse JSON and get the text
+    return r.json()["response"]
 
 
 if __name__ == "__main__":
