@@ -9,6 +9,7 @@ build/
 .venv/
 mov_env/
 movie/
+*.db
 
 # OS files
 .DS_Store

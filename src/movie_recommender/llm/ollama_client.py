@@ -11,4 +11,4 @@ def ollama_generate(prompt: str, model: str = "qwen3-coder:30b", url: str = "htt
 
 
 if __name__ == "__main__":
-    print(ollama_generate("Name one popular sci-fi movie in one sentence."))
+    print(ollama_generate("best romantic movie with a twist at the end"))
