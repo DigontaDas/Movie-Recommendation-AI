@@ -3,6 +3,13 @@
 
 @import "tailwindcss";
 
+@utility line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @theme {
   --color-primary: #030014;
 

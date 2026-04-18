@@ -20,13 +20,13 @@ from __future__ import annotations
 
 import json
 import re
-
+import os
 import requests
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
 OLLAMA_URL   = "http://localhost:11434"
-OLLAMA_MODEL = "llama3.1:8b"
+OLLAMA_MODEL = "llama3.2:3b"
 TIMEOUT      = 120  # seconds
 
 
@@ -103,6 +103,30 @@ def _call_ollama(prompt: str) -> str:
 
 # ── JSON parser ───────────────────────────────────────────────────────────────
 
+
+TMDB_API_KEY = os.getenv("VITE_TMDB_API_KEY") or os.getenv("TMDB_API_KEY")
+TMDB_BASE    = "https://api.themoviedb.org/3"
+TMDB_IMG     = "https://image.tmdb.org/t/p/w500"
+
+
+def _fetch_poster(title: str, year: str) -> str | None:
+    """Search TMDB for a poster URL by title + year."""
+    if not TMDB_API_KEY:
+        return None
+    try:
+        r = requests.get(
+            f"{TMDB_BASE}/search/movie",
+            params={"query": title, "year": year, "api_key": TMDB_API_KEY},
+            timeout=5,
+        )
+        r.raise_for_status()
+        results = r.json().get("results", [])
+        if results and results[0].get("poster_path"):
+            return f"{TMDB_IMG}{results[0]['poster_path']}"
+    except Exception:
+        pass
+    return None
+
 def _parse_llm_response(raw: str, candidates: list[dict], top_n: int) -> list[dict]:
     """
     Parse the LLM's JSON response into a clean list of result dicts
@@ -138,7 +162,7 @@ def _parse_llm_response(raw: str, candidates: list[dict], top_n: int) -> list[di
             "genre":     item.get("genre") or candidate.get("genres_str", ""),
             "score":     float(item.get("score", 0.0)),
             "reason":    item.get("reason", ""),
-            "poster_url": None,   # Phase 5: wire up TMDB API for posters
+            "poster_url": _fetch_poster(title, str(item.get("year", ""))),   # Phase 5: wire up TMDB API for posters
         })
 
     return results
@@ -161,7 +185,7 @@ def _fallback_results(candidates: list[dict], top_n: int) -> list[dict]:
             "genre":     c.get("genres_str", ""),
             "score":     float(c.get("avg_rating", 0.0)),
             "reason":    "Matched by semantic similarity to your query.",
-            "poster_url": None,
+            "poster_url": _fetch_poster(title, str(c.get("year", ""))),
         })
     return results
 
