@@ -15,9 +15,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from db.sqlite_store import init_db, save_query_and_results, get_history, get_query_by_id
-from recommender.pipeline import run_pipeline   # your Phase 3 pipeline
-
+from movie_recommender.db.sqlite_store import (
+    init_db,
+    save_query_and_results,
+    get_history,
+    get_query_by_id
+)
+from movie_recommender.recommender.pipeline import run_pipeline
 # ── App setup ──────────────────────────────────────────────────────────────────
 
 app = FastAPI(

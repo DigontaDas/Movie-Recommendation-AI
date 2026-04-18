@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     @property
     def data_raw_dir(self) -> Path:
         return ROOT_DIR / "data" / "raw" / self.movielens_variant
+    
+    @computed_field
+    @property
+    def chroma_persist_dir(self) -> Path:
+        return ROOT_DIR / "chroma_storage"
 
     @computed_field 
     @property
@@ -81,10 +86,10 @@ class Settings(BaseSettings):
     def sqlite_db_url(self) -> str:
         return f"sqlite+aiosqlite:///{ROOT_DIR / self.sqlite_db_path}"
 
-    @computed_field 
-    @property
-    def qdrant_url(self) -> str:
-        return f"http://{self.qdrant_host}:{self.qdrant_port}"
+    # @computed_field 
+    # @property
+    # def qdrant_url(self) -> str:
+    #     return f"http://{self.qdrant_host}:{self.qdrant_port}"
 
 
 @lru_cache(maxsize=1)
