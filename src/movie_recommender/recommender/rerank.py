@@ -23,13 +23,19 @@ import re
 import os
 import requests
 
+from dotenv import load_dotenv
+from movie_recommender.config import ROOT_DIR
+load_dotenv(ROOT_DIR / ".env", override=True)
+
 # ── Config ────────────────────────────────────────────────────────────────────
 
 OLLAMA_URL   = "http://localhost:11434"
 OLLAMA_MODEL = "llama3.2:3b"
 TIMEOUT      = 120  # seconds
 
-
+TMDB_API_KEY = os.getenv("TMDB_API_KEY") or os.getenv("VITE_TMDB_API_KEY") 
+TMDB_BASE    = "https://api.themoviedb.org/3"
+TMDB_IMG     = "https://image.tmdb.org/t/p/w500"
 # ── Prompt builder ────────────────────────────────────────────────────────────
 
 def _build_prompt(query: str, candidates: list[dict]) -> str:
@@ -102,13 +108,9 @@ def _call_ollama(prompt: str) -> str:
 
 
 # ── JSON parser ───────────────────────────────────────────────────────────────
-from dotenv import load_dotenv
-from movie_recommender.config import ROOT_DIR
-load_dotenv(ROOT_DIR / ".env")
 
-TMDB_API_KEY = os.getenv("VITE_TMDB_API_KEY") or os.getenv("TMDB_API_KEY")
-TMDB_BASE    = "https://api.themoviedb.org/3"
-TMDB_IMG     = "https://image.tmdb.org/t/p/w500"
+
+
 
 
 def _fetch_poster(title: str, year: str) -> str | None:
