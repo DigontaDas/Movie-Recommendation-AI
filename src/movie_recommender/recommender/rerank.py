@@ -102,7 +102,9 @@ def _call_ollama(prompt: str) -> str:
 
 
 # ── JSON parser ───────────────────────────────────────────────────────────────
-
+from dotenv import load_dotenv
+from movie_recommender.config import ROOT_DIR
+load_dotenv(ROOT_DIR / ".env")
 
 TMDB_API_KEY = os.getenv("VITE_TMDB_API_KEY") or os.getenv("TMDB_API_KEY")
 TMDB_BASE    = "https://api.themoviedb.org/3"
@@ -110,29 +112,40 @@ TMDB_IMG     = "https://image.tmdb.org/t/p/w500"
 
 
 def _fetch_poster(title: str, year: str) -> str | None:
-    """Search TMDB for a poster URL by title + year."""
     if not TMDB_API_KEY:
+        print(f"Warning: TMDB_API_KEY missing")
         return None
-    try:
-        r = requests.get(
-            f"{TMDB_BASE}/search/movie",
-            params={"query": title, "year": year, "api_key": TMDB_API_KEY},
-            timeout=5,
-        )
-        r.raise_for_status()
-        results = r.json().get("results", [])
-        if results and results[0].get("poster_path"):
-            return f"{TMDB_IMG}{results[0]['poster_path']}"
-    except Exception:
-        pass
+    
+    headers = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {TMDB_API_KEY}"
+    }
+    
+    # Try 1: with year
+    # Try 2: without year (year mismatch between MovieLens and TMDB is common)
+    attempts = [
+        {"query": title, "year": year} if year and year != "0" else {"query": title},
+        {"query": title},  # fallback without year
+    ]
+    
+    for params in attempts:
+        try:
+            r = requests.get(
+                f"{TMDB_BASE}/search/movie",
+                params=params,
+                headers=headers,
+                timeout=5,
+            )
+            r.raise_for_status()
+            results = r.json().get("results", [])
+            if results and results[0].get("poster_path"):
+                return f"{TMDB_IMG}{results[0]['poster_path']}"
+        except Exception as e:
+            print(f"Poster fetch error for '{title}': {e}")
+            continue
+    
     return None
-
 def _parse_llm_response(raw: str, candidates: list[dict], top_n: int) -> list[dict]:
-    """
-    Parse the LLM's JSON response into a clean list of result dicts
-    that match main.py's MovieResult schema:
-        movie_id, title, year, genre, score, reason, poster_url
-    """
     # Strip any accidental markdown fences the LLM might add
     cleaned = re.sub(r"```(?:json)?", "", raw).strip()
 
@@ -162,7 +175,10 @@ def _parse_llm_response(raw: str, candidates: list[dict], top_n: int) -> list[di
             "genre":     item.get("genre") or candidate.get("genres_str", ""),
             "score":     float(item.get("score", 0.0)),
             "reason":    item.get("reason", ""),
-            "poster_url": _fetch_poster(title, str(item.get("year", ""))),   # Phase 5: wire up TMDB API for posters
+           "poster_url": _fetch_poster(
+    candidate.get("clean_title") or title,   
+    str(candidate.get("year", "") or item.get("year", ""))
+),
         })
 
     return results

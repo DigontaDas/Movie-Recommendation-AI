@@ -15,7 +15,7 @@ from movie_recommender.embeddings.embedder import Embedder
 embedder = Embedder("all-MiniLM-L6-v2")
 from movie_recommender.config import get_settings
 client = chromadb.PersistentClient(path=str(get_settings().chroma_persist_dir))
-collection = client.get_collection(name="movies")
+collection = client.get_or_create_collection(name="movies")
 def retrieve_movies(query, k=5):
     query_vector = embedder.encode([query])
     results = collection.query(

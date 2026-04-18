@@ -1,8 +1,8 @@
 import { Client, Databases, Query, ID } from 'appwrite'
 
-const PROJECT_ID = import.meta.env.VITE_APPWRITE_PROJECT_ID;
-const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
-const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
+const PROJECT_ID    = import.meta.env.VITE_APPWRITE_PROJECT_ID   || '';
+const DATABASE_ID   = import.meta.env.VITE_APPWRITE_DATABASE_ID  || '';
+const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID || '';
 
 const client = new Client()
     // appwrite server
@@ -14,8 +14,7 @@ const database = new Databases(client)
 
 // user searches a movie, and the movie that alongs with the searh term
 export const updateSearchCount = async(searchTerm, movie) => {
-    // console.log(PROJECT_ID, DATABASE_ID, COLLECTION_ID)
-
+    if (!DATABASE_ID || !COLLECTION_ID) return
 // things this function have to do:
 
         // 1. use appwrite SDK/API to check if the search term
@@ -54,14 +53,18 @@ export const updateSearchCount = async(searchTerm, movie) => {
 }
 
 export const getTrendingMovies = async() => {
+    if (!DATABASE_ID || !COLLECTION_ID) {
+        console.warn('Appwrite env vars missing — skipping trending movies')
+        return []
+    }
     try {
         const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
             Query.limit(5),
             Query.orderDesc("count")
         ])
         return result.documents;
-        
     } catch (error) {
         console.log(error)
+        return []
     }
 }
