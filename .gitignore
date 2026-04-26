@@ -26,8 +26,10 @@ src/movie_recommender/data/history.db
 src/movie_recommender/data/__pycache__/
 
 # Frontend 
+node_modules/
 frontend/node_modules/
 frontend/.env
+frontend/.vite/
 
 # Env
 .env
@@ -45,6 +47,11 @@ chroma_storage/
 # Logs
 logs/
 *.log
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # Notebooks checkpoints
 notebooks/.ipynb_checkpoints/

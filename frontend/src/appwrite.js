@@ -11,10 +11,24 @@ const client = new Client()
     .setProject(PROJECT_ID)
 
 const database = new Databases(client)
+let appwriteDisabled = false
+
+const handleAppwriteError = (error) => {
+    const message = String(error?.message || '')
+    const statusCode = Number(error?.code || error?.response?.code || 0)
+
+    if (statusCode === 403 || message.toLowerCase().includes('project is paused')) {
+        appwriteDisabled = true
+        console.warn('Appwrite is unavailable right now, so trending/search-count features are disabled.')
+        return
+    }
+
+    console.warn('Appwrite request failed:', message || error)
+}
 
 // user searches a movie, and the movie that alongs with the searh term
 export const updateSearchCount = async(searchTerm, movie) => {
-    if (!DATABASE_ID || !COLLECTION_ID) return
+    if (!DATABASE_ID || !COLLECTION_ID || appwriteDisabled) return
 // things this function have to do:
 
         // 1. use appwrite SDK/API to check if the search term
@@ -46,14 +60,14 @@ export const updateSearchCount = async(searchTerm, movie) => {
         }
 
     } catch (error) {
-        console.log(error)
+        handleAppwriteError(error)
     }
     
     
 }
 
 export const getTrendingMovies = async() => {
-    if (!DATABASE_ID || !COLLECTION_ID) {
+    if (!DATABASE_ID || !COLLECTION_ID || appwriteDisabled) {
         console.warn('Appwrite env vars missing — skipping trending movies')
         return []
     }
@@ -64,7 +78,7 @@ export const getTrendingMovies = async() => {
         ])
         return result.documents;
     } catch (error) {
-        console.log(error)
+        handleAppwriteError(error)
         return []
     }
 }

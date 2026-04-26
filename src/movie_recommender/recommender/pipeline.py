@@ -22,7 +22,9 @@ from movie_recommender.recommender.retrieve import retrieve_movies
 # Rerank with Ollama LLM
 from movie_recommender.recommender.rerank import rerank
 
-# How many candidates to fetch from ChromaDB before reranking
+# Baseline number of candidates to fetch from ChromaDB before reranking.
+# We scale this up for larger requested result counts so the reranker has
+# enough headroom to return varied results.
 RETRIEVAL_K = 20
 
 
@@ -52,7 +54,8 @@ def run_pipeline(query: str, top_k: int = 5) -> list[dict]:
     """
     # ── Step 1: Retrieve top candidates from ChromaDB ─────────────────────
     # We fetch more than top_k so the LLM has enough to choose from
-    candidates = retrieve_movies(query, k=RETRIEVAL_K)
+    retrieval_k = max(RETRIEVAL_K, top_k * 4)
+    candidates = retrieve_movies(query, k=retrieval_k)
 
     if not candidates:
         return []
