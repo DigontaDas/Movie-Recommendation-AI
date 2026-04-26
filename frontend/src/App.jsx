@@ -469,6 +469,38 @@ export default function App() {
     }
   };
 
+  const removeMovieFromWatchlist = async (movie) => {
+    if (!movie) return;
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    const movieKey = getWatchlistKey(movie);
+    if (!movieKey) return;
+
+    const nextWatchlist = watchlist.filter((item) => getWatchlistKey(item) !== movieKey);
+
+    try {
+      const response = await authFetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ watchlist: nextWatchlist }),
+      });
+      const updatedProfile = await response.json();
+      if (!response.ok) {
+        throw new Error(updatedProfile?.detail || "Could not update watchlist.");
+      }
+      setProfile((current) => ({
+        ...(current || {}),
+        ...updatedProfile,
+        user: current?.user || authUser || null,
+      }));
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   return (
     <main>
       <div className="pattern" />
@@ -1720,6 +1752,7 @@ export default function App() {
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
         onAddToWatchlist={addMovieToWatchlist}
+        onRemoveFromWatchlist={removeMovieFromWatchlist}
         isInWatchlist={selectedMovieInWatchlist}
       />
 

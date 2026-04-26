@@ -147,6 +147,7 @@ export default function MovieDetailModal({
   movie,
   onClose,
   onAddToWatchlist,
+  onRemoveFromWatchlist,
   isInWatchlist = false,
 }) {
   const [details, setDetails] = useState(null);
@@ -373,7 +374,11 @@ export default function MovieDetailModal({
               </button>
               <button
                 type="button"
-                onClick={() => onAddToWatchlist?.(activeMovie)}
+                onClick={() =>
+                  isInWatchlist
+                    ? onRemoveFromWatchlist?.(activeMovie)
+                    : onAddToWatchlist?.(activeMovie)
+                }
                 style={{
                   width: 48,
                   height: 48,
@@ -384,7 +389,8 @@ export default function MovieDetailModal({
                   fontSize: 28,
                   cursor: "pointer",
                 }}
-                aria-label={isInWatchlist ? "Already in watchlist" : "Add to watchlist"}
+                aria-label={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
               >
                 {isInWatchlist ? "✓" : "+"}
               </button>

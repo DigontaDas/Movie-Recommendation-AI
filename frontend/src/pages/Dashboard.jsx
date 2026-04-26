@@ -480,6 +480,34 @@ export default function Dashboard() {
       }
       setProfile(updatedProfile);
       setActiveWatchlistId(getWatchlistKey(normalized));
+      } catch (error) {
+        alert(error.message);
+      }
+    };
+
+  const removeMovieFromWatchlist = async (movie) => {
+    if (!movie || !session?.token) return;
+
+    const movieKey = getWatchlistKey(movie);
+    if (!movieKey) return;
+
+    const currentWatchlist = profile?.watchlist || [];
+    const nextWatchlist = currentWatchlist.filter(
+      (item) => getWatchlistKey(item) !== movieKey,
+    );
+
+    try {
+      const response = await authFetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ watchlist: nextWatchlist }),
+      });
+      const updatedProfile = await response.json();
+      if (!response.ok) throw new Error(updatedProfile?.detail || "Could not update watchlist.");
+      setProfile(updatedProfile);
+      if (activeWatchlistId === movieKey) {
+        setActiveWatchlistId(getWatchlistKey(nextWatchlist[0]) || "");
+      }
     } catch (error) {
       alert(error.message);
     }
@@ -1516,51 +1544,96 @@ export default function Dashboard() {
                     gap: 8,
                   }}
                 >
-                  {displayedWatchlist.map((movie) => (
-                    <button
-                      key={getWatchlistKey(movie)}
-                      type="button"
-                      onMouseEnter={() => setActiveWatchlistId(getWatchlistKey(movie))}
-                      onClick={() => {
-                        setActiveWatchlistId(getWatchlistKey(movie));
-                        setSelectedMovie(normalizeMovie(movie));
-                      }}
-                      style={{
-                        aspectRatio: "2/3",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        background: "#1a1a2e",
-                        border:
-                          activeWatchlistId === getWatchlistKey(movie)
-                            ? "1px solid rgba(167,139,250,0.85)"
-                            : "1px solid rgba(255,255,255,0.06)",
-                        padding: 0,
-                        cursor: "pointer",
-                        boxShadow:
-                          activeWatchlistId === getWatchlistKey(movie)
-                            ? "0 0 0 2px rgba(167,139,250,0.15)"
-                            : "none",
-                        transform:
-                          activeWatchlistId === getWatchlistKey(movie)
-                            ? "translateY(-2px)"
-                            : "none",
-                        transition:
-                          "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-                      }}
-                    >
-                      {movie.poster_url || movie.poster_path ? (
-                        <img
-                          src={movie.poster_url || `${TMDB_IMG}${movie.poster_path}`}
-                          alt={movie.title}
+                  {displayedWatchlist.map((movie) => {
+                    const movieKey = getWatchlistKey(movie);
+                    const isSavedToWatchlist = watchlist.some(
+                      (item) => getWatchlistKey(item) === movieKey,
+                    );
+
+                    return (
+                      <div
+                        key={movieKey}
+                        style={{
+                          position: "relative",
+                          aspectRatio: "2/3",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onMouseEnter={() => setActiveWatchlistId(movieKey)}
+                          onClick={() => {
+                            setActiveWatchlistId(movieKey);
+                            setSelectedMovie(normalizeMovie(movie));
+                          }}
                           style={{
                             width: "100%",
                             height: "100%",
-                            objectFit: "cover",
+                            borderRadius: 12,
+                            overflow: "hidden",
+                            background: "#1a1a2e",
+                            border:
+                              activeWatchlistId === movieKey
+                                ? "1px solid rgba(167,139,250,0.85)"
+                                : "1px solid rgba(255,255,255,0.06)",
+                            padding: 0,
+                            cursor: "pointer",
+                            boxShadow:
+                              activeWatchlistId === movieKey
+                                ? "0 0 0 2px rgba(167,139,250,0.15)"
+                                : "none",
+                            transform:
+                              activeWatchlistId === movieKey
+                                ? "translateY(-2px)"
+                                : "none",
+                            transition:
+                              "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
                           }}
-                        />
-                      ) : null}
-                    </button>
-                  ))}
+                        >
+                          {movie.poster_url || movie.poster_path ? (
+                            <img
+                              src={movie.poster_url || `${TMDB_IMG}${movie.poster_path}`}
+                              alt={movie.title}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : null}
+                        </button>
+                        {isSavedToWatchlist ? (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              removeMovieFromWatchlist(movie);
+                            }}
+                            style={{
+                              position: "absolute",
+                              top: 8,
+                              right: 8,
+                              width: 28,
+                              height: 28,
+                              borderRadius: 999,
+                              border: "1px solid rgba(255,255,255,0.18)",
+                              background: "rgba(8, 6, 20, 0.78)",
+                              color: "#fff",
+                              fontSize: 16,
+                              lineHeight: 1,
+                              cursor: "pointer",
+                              display: "grid",
+                              placeItems: "center",
+                              backdropFilter: "blur(10px)",
+                            }}
+                            aria-label={`Remove ${movie.title} from watchlist`}
+                            title="Remove from watchlist"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             </div>
@@ -1572,6 +1645,7 @@ export default function Dashboard() {
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
         onAddToWatchlist={addMovieToWatchlist}
+        onRemoveFromWatchlist={removeMovieFromWatchlist}
         isInWatchlist={selectedMovieInWatchlist}
       />
     </div>
