@@ -1,3 +1,4 @@
+<img width="1919" height="872" alt="movie man" src="https://github.com/user-attachments/assets/d3e41f90-23e2-4526-8f40-0b924ce84ce5" />
 
 ## How It Works
 
