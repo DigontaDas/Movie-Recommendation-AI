@@ -31,6 +31,35 @@ function normalizeMovie(movie) {
   };
 }
 
+function getWatchlistKey(movie) {
+  if (!movie) return "";
+  return String(
+    movie.tmdb_id ||
+      movie.tmdbId ||
+      movie.movie_id ||
+      movie.id ||
+      `${movie.title || "movie"}-${movie.year || movie.release_date || ""}`,
+  );
+}
+
+function normalizeWatchlistMovie(movie) {
+  if (!movie) return null;
+  return {
+    movie_id: movie.movie_id || null,
+    tmdb_id: movie.tmdb_id || movie.tmdbId || (typeof movie.id === "number" ? movie.id : null),
+    title: movie.title || "Unknown",
+    year: movie.year || movie.release_date?.split("-")[0] || movie.first_air_date?.split("-")[0] || null,
+    genre: movie.genre || movie.genres_str || "",
+    poster_url: movie.poster_url || (movie.poster_path ? `${TMDB_IMG}${movie.poster_path}` : null),
+    poster_path: movie.poster_path || null,
+    backdrop_path: movie.backdrop_path || null,
+    release_date: movie.release_date || null,
+    original_language: movie.original_language || null,
+    vote_average: movie.vote_average ?? null,
+    score: movie.score ?? null,
+  };
+}
+
 function deriveDashboardSignals(history) {
   if (!history.length) {
     return {
@@ -317,6 +346,16 @@ export default function Dashboard() {
   const activeRadarData =
     derived.radar.find((item) => item.label === activeRadarLabel) ||
     derived.radar[0];
+  const watchlist = (profile?.watchlist || []).map(normalizeMovie);
+  const displayedWatchlist = watchlist.length
+    ? watchlist
+    : tmdbTrending.map(normalizeMovie);
+  const selectedMovieInWatchlist = Boolean(
+    selectedMovie &&
+      watchlist.some(
+        (item) => getWatchlistKey(item) === getWatchlistKey(selectedMovie),
+      ),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -413,6 +452,37 @@ export default function Dashboard() {
   const logout = () => {
     clearStoredAuth();
     navigate("/login");
+  };
+
+  const addMovieToWatchlist = async (movie) => {
+    if (!movie || !session?.token) return;
+
+    const normalized = normalizeWatchlistMovie(movie);
+    if (!normalized) return;
+
+    const currentWatchlist = profile?.watchlist || [];
+    const alreadySaved = currentWatchlist.some(
+      (item) => getWatchlistKey(item) === getWatchlistKey(normalized),
+    );
+    if (alreadySaved) return;
+
+    const nextWatchlist = [normalized, ...currentWatchlist].slice(0, 24);
+
+    try {
+      const response = await authFetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ watchlist: nextWatchlist }),
+      });
+      const updatedProfile = await response.json();
+      if (!response.ok) {
+        throw new Error(updatedProfile?.detail || "Could not update watchlist.");
+      }
+      setProfile(updatedProfile);
+      setActiveWatchlistId(getWatchlistKey(normalized));
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   const sidebarWidth = 228;
@@ -1435,7 +1505,9 @@ export default function Dashboard() {
                 >
                   {activeWatchlistId
                     ? "Selected watchlist poster opened with full details. Click another poster to preview a different title."
-                    : "Save movies to watch later. For now, explore this interactive preview grid and open any title for details."}
+                    : watchlist.length
+                      ? "These are the movies you have already saved to your personal watchlist."
+                      : "Save movies to watch later. For now, explore this interactive preview grid and open any title for details."}
                 </p>
                 <div
                   style={{
@@ -1444,13 +1516,13 @@ export default function Dashboard() {
                     gap: 8,
                   }}
                 >
-                  {tmdbTrending.map((movie) => (
+                  {displayedWatchlist.map((movie) => (
                     <button
-                      key={movie.id}
+                      key={getWatchlistKey(movie)}
                       type="button"
-                      onMouseEnter={() => setActiveWatchlistId(movie.id)}
+                      onMouseEnter={() => setActiveWatchlistId(getWatchlistKey(movie))}
                       onClick={() => {
-                        setActiveWatchlistId(movie.id);
+                        setActiveWatchlistId(getWatchlistKey(movie));
                         setSelectedMovie(normalizeMovie(movie));
                       }}
                       style={{
@@ -1459,26 +1531,26 @@ export default function Dashboard() {
                         overflow: "hidden",
                         background: "#1a1a2e",
                         border:
-                          activeWatchlistId === movie.id
+                          activeWatchlistId === getWatchlistKey(movie)
                             ? "1px solid rgba(167,139,250,0.85)"
                             : "1px solid rgba(255,255,255,0.06)",
                         padding: 0,
                         cursor: "pointer",
                         boxShadow:
-                          activeWatchlistId === movie.id
+                          activeWatchlistId === getWatchlistKey(movie)
                             ? "0 0 0 2px rgba(167,139,250,0.15)"
                             : "none",
                         transform:
-                          activeWatchlistId === movie.id
+                          activeWatchlistId === getWatchlistKey(movie)
                             ? "translateY(-2px)"
                             : "none",
                         transition:
                           "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
                       }}
                     >
-                      {movie.poster_path && (
+                      {movie.poster_url || movie.poster_path ? (
                         <img
-                          src={`${TMDB_IMG}${movie.poster_path}`}
+                          src={movie.poster_url || `${TMDB_IMG}${movie.poster_path}`}
                           alt={movie.title}
                           style={{
                             width: "100%",
@@ -1486,7 +1558,7 @@ export default function Dashboard() {
                             objectFit: "cover",
                           }}
                         />
-                      )}
+                      ) : null}
                     </button>
                   ))}
                 </div>
@@ -1499,6 +1571,8 @@ export default function Dashboard() {
       <MovieDetailModal
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
+        onAddToWatchlist={addMovieToWatchlist}
+        isInWatchlist={selectedMovieInWatchlist}
       />
     </div>
   );

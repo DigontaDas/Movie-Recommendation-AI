@@ -222,6 +222,35 @@ function formatScore(value) {
   return numeric.toFixed(1);
 }
 
+function getWatchlistKey(movie) {
+  if (!movie) return "";
+  return String(
+    movie.tmdb_id ||
+      movie.tmdbId ||
+      movie.movie_id ||
+      movie.id ||
+      `${movie.title || "movie"}-${movie.year || movie.release_date || ""}`,
+  );
+}
+
+function normalizeWatchlistMovie(movie) {
+  if (!movie) return null;
+  return {
+    movie_id: movie.movie_id || null,
+    tmdb_id: movie.tmdb_id || movie.tmdbId || (typeof movie.id === "number" ? movie.id : null),
+    title: movie.title || "Unknown",
+    year: movie.year || movie.release_date?.split("-")[0] || movie.first_air_date?.split("-")[0] || null,
+    genre: movie.genre || movie.genres_str || "",
+    poster_url: movie.poster_url || (movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null),
+    poster_path: movie.poster_path || null,
+    backdrop_path: movie.backdrop_path || null,
+    release_date: movie.release_date || null,
+    original_language: movie.original_language || null,
+    vote_average: movie.vote_average ?? null,
+    score: movie.score ?? null,
+  };
+}
+
 export default function App() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -404,6 +433,41 @@ export default function App() {
   const avatarUrl = profile?.avatar?.url || null;
   const fallbackInitial =
     profile?.displayName?.[0] || profile?.user?.displayName?.[0] || "M";
+  const watchlist = profile?.watchlist || [];
+  const selectedMovieInWatchlist = Boolean(
+    selectedMovie && watchlist.some((item) => getWatchlistKey(item) === getWatchlistKey(selectedMovie)),
+  );
+
+  const addMovieToWatchlist = async (movie) => {
+    if (!movie) return;
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    const normalized = normalizeWatchlistMovie(movie);
+    if (!normalized) return;
+
+    const alreadySaved = watchlist.some((item) => getWatchlistKey(item) === getWatchlistKey(normalized));
+    if (alreadySaved) return;
+
+    const nextWatchlist = [normalized, ...watchlist].slice(0, 24);
+
+    try {
+      const response = await authFetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ watchlist: nextWatchlist }),
+      });
+      const updatedProfile = await response.json();
+      if (!response.ok) {
+        throw new Error(updatedProfile?.detail || "Could not update watchlist.");
+      }
+      setProfile((current) => ({ ...(current || {}), ...updatedProfile, user: current?.user || authUser || null }));
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   return (
     <main>
@@ -1655,6 +1719,8 @@ export default function App() {
       <MovieDetailModal
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
+        onAddToWatchlist={addMovieToWatchlist}
+        isInWatchlist={selectedMovieInWatchlist}
       />
 
       <style>{`

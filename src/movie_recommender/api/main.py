@@ -93,6 +93,21 @@ class ProfileStats(BaseModel):
     tasteSync: float = 0.0
 
 
+class WatchlistMovie(BaseModel):
+    movie_id: str | None = None
+    tmdb_id: int | None = None
+    title: str
+    year: str | None = None
+    genre: str | None = None
+    poster_url: str | None = None
+    poster_path: str | None = None
+    backdrop_path: str | None = None
+    release_date: str | None = None
+    original_language: str | None = None
+    vote_average: float | None = None
+    score: float | None = None
+
+
 class ProfilePayload(BaseModel):
     displayName: str | None = None
     username: str | None = None
@@ -100,6 +115,7 @@ class ProfilePayload(BaseModel):
     avatar: ProfileImage | None = None
     banner: ProfileImage | None = None
     stats: ProfileStats | None = None
+    watchlist: list[WatchlistMovie] | None = None
 
 
 def _hash_password(password: str, salt: str) -> str:

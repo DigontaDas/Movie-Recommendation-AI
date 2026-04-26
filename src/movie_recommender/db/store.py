@@ -46,6 +46,7 @@ def build_default_profile(
         "avatar": {"url": None, "publicId": None},
         "banner": {"url": None, "publicId": None},
         "stats": {"moviesTrained": 0, "tasteSync": 0.0},
+        "watchlist": [],
     }
 
 

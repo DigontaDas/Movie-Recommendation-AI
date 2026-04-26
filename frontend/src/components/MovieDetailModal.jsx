@@ -143,7 +143,12 @@ async function fetchTmdbDetails(movie) {
   }
 }
 
-export default function MovieDetailModal({ movie, onClose }) {
+export default function MovieDetailModal({
+  movie,
+  onClose,
+  onAddToWatchlist,
+  isInWatchlist = false,
+}) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -368,6 +373,7 @@ export default function MovieDetailModal({ movie, onClose }) {
               </button>
               <button
                 type="button"
+                onClick={() => onAddToWatchlist?.(activeMovie)}
                 style={{
                   width: 48,
                   height: 48,
@@ -378,23 +384,9 @@ export default function MovieDetailModal({ movie, onClose }) {
                   fontSize: 28,
                   cursor: "pointer",
                 }}
+                aria-label={isInWatchlist ? "Already in watchlist" : "Add to watchlist"}
               >
-                +
-              </button>
-              <button
-                type="button"
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "50%",
-                  border: "2px solid rgba(255,255,255,0.52)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#fff",
-                  fontSize: 24,
-                  cursor: "pointer",
-                }}
-              >
-                👍
+                {isInWatchlist ? "✓" : "+"}
               </button>
               {subtitleLine && (
                 <p
