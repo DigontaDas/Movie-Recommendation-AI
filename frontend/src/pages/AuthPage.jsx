@@ -91,7 +91,7 @@ export default function AuthPage({ mode = "login" }) {
   }, [storedSession?.token]);
 
   if (storedSession?.token && sessionReady) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const submit = async (event) => {
@@ -126,7 +126,7 @@ export default function AuthPage({ mode = "login" }) {
 
       setStoredAuth(data);
       setStoredSession(data);
-      const redirectTo = location.state?.from?.pathname || "/dashboard";
+      const redirectTo = location.state?.from?.pathname || "/";
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.message);

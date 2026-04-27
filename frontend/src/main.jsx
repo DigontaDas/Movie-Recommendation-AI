@@ -58,7 +58,14 @@ function ProtectedRoute({ children }) {
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={<App />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <App />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route
@@ -69,7 +76,14 @@ createRoot(document.getElementById("root")).render(
           </ProtectedRoute>
         }
       />
-      <Route path="/genre/:genreId" element={<GenrePage />} />
+      <Route
+        path="/genre/:genreId"
+        element={
+          <ProtectedRoute>
+            <GenrePage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   </BrowserRouter>
 );

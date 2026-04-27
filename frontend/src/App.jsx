@@ -237,11 +237,20 @@ function normalizeWatchlistMovie(movie) {
   if (!movie) return null;
   return {
     movie_id: movie.movie_id || null,
-    tmdb_id: movie.tmdb_id || movie.tmdbId || (typeof movie.id === "number" ? movie.id : null),
+    tmdb_id:
+      movie.tmdb_id ||
+      movie.tmdbId ||
+      (typeof movie.id === "number" ? movie.id : null),
     title: movie.title || "Unknown",
-    year: movie.year || movie.release_date?.split("-")[0] || movie.first_air_date?.split("-")[0] || null,
+    year:
+      movie.year ||
+      movie.release_date?.split("-")[0] ||
+      movie.first_air_date?.split("-")[0] ||
+      null,
     genre: movie.genre || movie.genres_str || "",
-    poster_url: movie.poster_url || (movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null),
+    poster_url:
+      movie.poster_url ||
+      (movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null),
     poster_path: movie.poster_path || null,
     backdrop_path: movie.backdrop_path || null,
     release_date: movie.release_date || null,
@@ -276,7 +285,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [trendingMovies, setTrendingMovies] = useState([]);
-  const [heroPosters, setHeroPosters] = useState(HERO_FALLBACKS);
+  const [heroPosters, setHeroPosters] = useState([]);
+  const [heroReady, setHeroReady] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [profile, setProfile] = useState(null);
   const [showForYou, setShowForYou] = useState(true);
@@ -328,9 +338,19 @@ export default function App() {
   }, [debouncedSearchTerm]);
 
   useEffect(() => {
+    let cancelled = false;
+
     getTrendingMovies()
-      .then((movies) => setTrendingMovies(movies || []))
-      .catch(() => setTrendingMovies([]));
+      .then((movies) => {
+        if (!cancelled) {
+          setTrendingMovies(movies || []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTrendingMovies([]);
+        }
+      });
 
     fetch(`${API_BASE_URL}/movie/now_playing?page=1`, API_OPTIONS)
       .then((response) => response.json())
@@ -338,11 +358,26 @@ export default function App() {
         const candidates = (data.results || [])
           .filter((movie) => movie.poster_path)
           .slice(0, 3);
-        if (candidates.length === 3) {
-          setHeroPosters(candidates);
+
+        if (!cancelled) {
+          if (candidates.length === 3) {
+            setHeroPosters(candidates);
+          } else {
+            setHeroPosters(HERO_FALLBACKS);
+          }
+          setHeroReady(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) {
+          setHeroPosters(HERO_FALLBACKS);
+          setHeroReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -435,7 +470,10 @@ export default function App() {
     profile?.displayName?.[0] || profile?.user?.displayName?.[0] || "M";
   const watchlist = profile?.watchlist || [];
   const selectedMovieInWatchlist = Boolean(
-    selectedMovie && watchlist.some((item) => getWatchlistKey(item) === getWatchlistKey(selectedMovie)),
+    selectedMovie &&
+    watchlist.some(
+      (item) => getWatchlistKey(item) === getWatchlistKey(selectedMovie),
+    ),
   );
 
   const addMovieToWatchlist = async (movie) => {
@@ -448,7 +486,9 @@ export default function App() {
     const normalized = normalizeWatchlistMovie(movie);
     if (!normalized) return;
 
-    const alreadySaved = watchlist.some((item) => getWatchlistKey(item) === getWatchlistKey(normalized));
+    const alreadySaved = watchlist.some(
+      (item) => getWatchlistKey(item) === getWatchlistKey(normalized),
+    );
     if (alreadySaved) return;
 
     const nextWatchlist = [normalized, ...watchlist].slice(0, 24);
@@ -461,9 +501,15 @@ export default function App() {
       });
       const updatedProfile = await response.json();
       if (!response.ok) {
-        throw new Error(updatedProfile?.detail || "Could not update watchlist.");
+        throw new Error(
+          updatedProfile?.detail || "Could not update watchlist.",
+        );
       }
-      setProfile((current) => ({ ...(current || {}), ...updatedProfile, user: current?.user || authUser || null }));
+      setProfile((current) => ({
+        ...(current || {}),
+        ...updatedProfile,
+        user: current?.user || authUser || null,
+      }));
     } catch (error) {
       alert(error.message);
     }
@@ -479,7 +525,9 @@ export default function App() {
     const movieKey = getWatchlistKey(movie);
     if (!movieKey) return;
 
-    const nextWatchlist = watchlist.filter((item) => getWatchlistKey(item) !== movieKey);
+    const nextWatchlist = watchlist.filter(
+      (item) => getWatchlistKey(item) !== movieKey,
+    );
 
     try {
       const response = await authFetch(`${API_BASE}/profile`, {
@@ -489,7 +537,9 @@ export default function App() {
       });
       const updatedProfile = await response.json();
       if (!response.ok) {
-        throw new Error(updatedProfile?.detail || "Could not update watchlist.");
+        throw new Error(
+          updatedProfile?.detail || "Could not update watchlist.",
+        );
       }
       setProfile((current) => ({
         ...(current || {}),
@@ -627,70 +677,80 @@ export default function App() {
         </nav>
 
         <header>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 0,
-              marginBottom: "14px",
-            }}
-          >
-            {heroPosters.map((movie, index) => (
-              <button
-                key={movie.id || movie.title}
-                type="button"
-                onClick={() => setSelectedMovie(normalizeMovieForModal(movie))}
-                style={{
-                  width: 220,
-                  height: 320,
-                  borderRadius: 18,
-                  overflow: "hidden",
-                  border: "none",
-                  background: "#140f2c",
-                  cursor: "pointer",
-                  transform:
-                    index === 0
-                      ? "translateX(36px) rotate(-7deg)"
-                      : index === 2
-                        ? "translateX(-36px) rotate(7deg)"
-                        : "translateY(-10px)",
-                  boxShadow: "0 18px 36px rgba(0,0,0,0.36)",
-                  transition: "transform 0.25s ease, box-shadow 0.25s ease",
-                  zIndex: index === 1 ? 3 : 2,
-                }}
-                onMouseEnter={(event) => {
-                  event.currentTarget.style.transform =
-                    index === 0
-                      ? "translateX(36px) rotate(-7deg) translateY(-8px)"
-                      : index === 2
-                        ? "translateX(-36px) rotate(7deg) translateY(-8px)"
-                        : "translateY(-16px)";
-                  event.currentTarget.style.boxShadow =
-                    "0 24px 48px rgba(0,0,0,0.48)";
-                }}
-                onMouseLeave={(event) => {
-                  event.currentTarget.style.transform =
-                    index === 0
-                      ? "translateX(36px) rotate(-7deg)"
-                      : index === 2
-                        ? "translateX(-36px) rotate(7deg)"
-                        : "translateY(-10px)";
-                  event.currentTarget.style.boxShadow =
-                    "0 18px 36px rgba(0,0,0,0.36)";
-                }}
-              >
-                <img
-                  src={
-                    movie.poster_path
-                      ? `${TMDB_IMAGE_BASE}${movie.poster_path}`
-                      : "/no-movie.png"
+          {heroReady ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 0,
+                marginBottom: "14px",
+              }}
+            >
+              {heroPosters.map((movie, index) => (
+                <button
+                  key={movie.id || movie.title}
+                  type="button"
+                  onClick={() =>
+                    setSelectedMovie(normalizeMovieForModal(movie))
                   }
-                  alt={movie.title}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              </button>
-            ))}
-          </div>
+                  style={{
+                    width: 220,
+                    height: 320,
+                    borderRadius: 18,
+                    overflow: "hidden",
+                    border: "none",
+                    background: "#140f2c",
+                    cursor: "pointer",
+                    transform:
+                      index === 0
+                        ? "translateX(36px) rotate(-7deg)"
+                        : index === 2
+                          ? "translateX(-36px) rotate(7deg)"
+                          : "translateY(-10px)",
+                    boxShadow: "0 18px 36px rgba(0,0,0,0.36)",
+                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                    zIndex: index === 1 ? 3 : 2,
+                  }}
+                  onMouseEnter={(event) => {
+                    event.currentTarget.style.transform =
+                      index === 0
+                        ? "translateX(36px) rotate(-7deg) translateY(-8px)"
+                        : index === 2
+                          ? "translateX(-36px) rotate(7deg) translateY(-8px)"
+                          : "translateY(-16px)";
+                    event.currentTarget.style.boxShadow =
+                      "0 24px 48px rgba(0,0,0,0.48)";
+                  }}
+                  onMouseLeave={(event) => {
+                    event.currentTarget.style.transform =
+                      index === 0
+                        ? "translateX(36px) rotate(-7deg)"
+                        : index === 2
+                          ? "translateX(-36px) rotate(7deg)"
+                          : "translateY(-10px)";
+                    event.currentTarget.style.boxShadow =
+                      "0 18px 36px rgba(0,0,0,0.36)";
+                  }}
+                >
+                  <img
+                    src={
+                      movie.poster_path
+                        ? `${TMDB_IMAGE_BASE}${movie.poster_path}`
+                        : "/no-movie.png"
+                    }
+                    alt={movie.title}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ height: 334, marginBottom: "14px" }} />
+          )}
 
           <h1>
             Find <span className="text-gradient">Movies</span> You'll Enjoy
@@ -806,17 +866,25 @@ export default function App() {
                   value={aiTopK}
                   onChange={(e) => setAiTopK(Number(e.target.value))}
                   style={{
-                    background: "rgba(255,255,255,0.08)",
+                    background: "rgba(22,16,48,0.98)",
                     border: "1px solid rgba(255,255,255,0.12)",
                     color: "#fff",
                     fontSize: "12px",
                     padding: "5px 10px",
                     borderRadius: "8px",
                     cursor: "pointer",
+                    colorScheme: "dark",
                   }}
                 >
                   {[5, 10, 15, 20].map((n) => (
-                    <option key={n} value={n}>
+                    <option
+                      key={n}
+                      value={n}
+                      style={{
+                        background: "#161030",
+                        color: "#f5efff",
+                      }}
+                    >
                       {n} picks
                     </option>
                   ))}

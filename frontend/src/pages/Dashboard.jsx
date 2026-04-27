@@ -309,6 +309,7 @@ export default function Dashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
+  const [dashboardReady, setDashboardReady] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState(null);
   const [tmdbTrending, setTmdbTrending] = useState([]);
@@ -347,9 +348,6 @@ export default function Dashboard() {
     derived.radar.find((item) => item.label === activeRadarLabel) ||
     derived.radar[0];
   const watchlist = (profile?.watchlist || []).map(normalizeMovie);
-  const displayedWatchlist = watchlist.length
-    ? watchlist
-    : tmdbTrending.map(normalizeMovie);
   const selectedMovieInWatchlist = Boolean(
     selectedMovie &&
       watchlist.some(
@@ -364,6 +362,10 @@ export default function Dashboard() {
       navigate("/login", { replace: true });
       return undefined;
     }
+
+    setDashboardReady(false);
+    setHistoryLoading(true);
+    setHistoryError(null);
 
     authFetch(`${API_BASE}/auth/me`)
       .then(async (authResponse) => {
@@ -394,6 +396,7 @@ export default function Dashboard() {
         if (!cancelled) {
           setProfile(profileData);
           setHistory(historyData);
+          setDashboardReady(true);
           setHistoryLoading(false);
         }
       })
@@ -403,6 +406,7 @@ export default function Dashboard() {
           setHistoryError(
             "Could not load your signed-in dashboard. Please log in again.",
           );
+          setDashboardReady(true);
           setHistoryLoading(false);
           navigate("/login", { replace: true });
         }
@@ -521,6 +525,40 @@ export default function Dashboard() {
     // { label: "Genres", short: "GN", href: "#genres" },
     // { label: "Watchlist", short: "WL", href: "#watchlist" },
   ];
+
+  if (!dashboardReady && !historyError) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background:
+            "radial-gradient(circle at top left, rgba(92,77,255,0.18), transparent 24%), radial-gradient(circle at top right, rgba(133,92,255,0.12), transparent 20%), #030014",
+          color: "#fff",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "18px 22px",
+            borderRadius: 18,
+            background: "rgba(20,15,48,0.82)",
+            border: "1px solid rgba(167,139,250,0.16)",
+            boxShadow: "0 24px 70px rgba(4,2,18,0.45)",
+            backdropFilter: "blur(18px)",
+          }}
+        >
+          <Spinner />
+          <span style={{ color: "rgba(255,255,255,0.82)", fontSize: 14 }}>
+            Loading your dashboard...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1508,19 +1546,6 @@ export default function Dashboard() {
                   >
                     MY WATCHLIST
                   </h2>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      background: "rgba(16,185,129,0.15)",
-                      border: "1px solid rgba(16,185,129,0.28)",
-                      color: "#10b981",
-                      padding: "4px 10px",
-                      borderRadius: 999,
-                      fontWeight: 700,
-                    }}
-                  >
-                    COMING SOON
-                  </span>
                 </div>
                 <p
                   style={{
@@ -1534,21 +1559,20 @@ export default function Dashboard() {
                   {activeWatchlistId
                     ? "Selected watchlist poster opened with full details. Click another poster to preview a different title."
                     : watchlist.length
-                      ? "These are the movies you have already saved to your personal watchlist."
-                      : "Save movies to watch later. For now, explore this interactive preview grid and open any title for details."}
+                      ? "These are the movies you have saved to your personal watchlist. Open one for details or remove it anytime."
+                      : "Movies you save from the detail modal will appear here. Your watchlist is currently empty."}
                 </p>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: 8,
-                  }}
-                >
-                  {displayedWatchlist.map((movie) => {
+                {watchlist.length ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 8,
+                    }}
+                  >
+                    {watchlist.map((movie) => {
                     const movieKey = getWatchlistKey(movie);
-                    const isSavedToWatchlist = watchlist.some(
-                      (item) => getWatchlistKey(item) === movieKey,
-                    );
+                    const isSavedToWatchlist = true;
 
                     return (
                       <div
@@ -1633,8 +1657,44 @@ export default function Dashboard() {
                         ) : null}
                       </div>
                     );
-                  })}
-                </div>
+                    })}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      minHeight: 220,
+                      borderRadius: 16,
+                      border: "1px dashed rgba(167,139,250,0.2)",
+                      background: "rgba(255,255,255,0.02)",
+                      display: "grid",
+                      placeItems: "center",
+                      padding: "24px 20px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div style={{ maxWidth: 320 }}>
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#f5efff",
+                          marginBottom: 8,
+                        }}
+                      >
+                        Your watchlist is empty
+                      </div>
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.56)",
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        Click the `+` button in any movie detail modal to save a title here for later.
+                      </div>
+                    </div>
+                  </div>
+                )}
               </section>
             </div>
           </div>
