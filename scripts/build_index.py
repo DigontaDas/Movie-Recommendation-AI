@@ -9,6 +9,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from movie_recommender.config import get_settings
+settings = get_settings()
+import os
+os.environ["SENTENCE_TRANSFORMERS_HOME"] = str(settings.transformer_cache_dir)
+settings.transformer_cache_dir.mkdir(parents=True, exist_ok=True)
+
 from movie_recommender.data.preprocess import load_processed
 from movie_recommender.embeddings.embedder import Embedder
 from movie_recommender.logging_config import configure_logging, get_logger

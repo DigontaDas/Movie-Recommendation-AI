@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: movie-recommender-backend
+    runtime: docker
+    plan: free # Use free tier
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: ENABLE_OLLAMA
+        value: "false"
+      - key: STORAGE_BACKEND
+        value: mongodb
+      - key: MONGODB_URI
+        sync: false # User must provide this in Render dashboard
+      - key: MONGODB_DB_NAME
+        value: moviesite
+      - key: AUTH_SECRET
+        generateValue: true # Generates a random secret if not provided
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
+      - key: VITE_TMDB_API_KEY
+        sync: false
+    healthCheckPath: /health
