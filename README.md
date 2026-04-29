@@ -140,37 +140,6 @@ npm run dev
 
 ---
 
-## ☁️ Deployment Guide
-
-### 1. Deploying the Frontend to Vercel
-Vercel is the perfect platform for deploying the React/Vite frontend.
-
-1. Create a free account on [Vercel](https://vercel.com).
-2. Connect your GitHub repository from the Vercel Dashboard.
-3. In the project setup, set the **Root Directory** to `frontend`.
-4. Vercel will automatically detect **Vite**. Leave the build command (`npm run build`) and output directory (`dist`) as default.
-5. Add an Environment Variable: `VITE_API_URL` pointing to your deployed backend API URL (e.g., `https://your-backend.render.com`).
-6. Click **Deploy**! 🚀
-
-### 2. Deploying the AI Backend (FastAPI + Chroma + Ollama)
-Deploying this AI stack requires a server with **persistent storage** (for ChromaDB and SQLite) and **sufficient compute/RAM** (for Sentence Transformers and Ollama). 
-
-> [!WARNING]
-> **Why not Vercel for the backend?** Serverless platforms like Vercel have strict 10s–60s timeouts, ~1GB RAM limits, and read-only ephemeral filesystems. They cannot run local vector databases (ChromaDB) or local LLMs (Ollama).
-
-**Recommended Platforms**: [Render](https://render.com), [Railway](https://railway.app), or AWS EC2 / DigitalOcean.
-
-**General Deployment Steps (VPS/Docker):**
-1. Provision a Virtual Machine (minimum 4GB RAM, 8GB+ recommended if running Ollama models).
-2. Install Docker & Docker Compose on the server.
-3. Containerize your FastAPI application (create a `Dockerfile` in the root).
-4. Run Ollama as a separate background service or container on the same server (`docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama`).
-5. Execute `ollama run llama3` (or your chosen model) to download the weights.
-6. Run the FastAPI container, ensuring you mount a persistent volume to `/chroma_storage` and the SQLite database path.
-
-*If you prefer not to host Ollama yourself, you can swap the Ollama client for an API like OpenAI, Groq, or TogetherAI, allowing you to run the FastAPI backend on much smaller, cheaper servers!*
-
----
 
 ### Example API Request
 ```bash
