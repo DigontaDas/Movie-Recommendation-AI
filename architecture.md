@@ -5,24 +5,27 @@ The Movie Recommendation AI is designed as a decoupled, full-stack application l
 ## 1. High-Level Architecture
 
 ```mermaid
-architecture-beta
-    group frontend(cloud)[Frontend]
-    group backend(server)[Backend API]
-    group ai(database)[AI & Data Layer]
+flowchart LR
+    subgraph Frontend [Presentation Layer]
+        React[React / Vite]
+    end
 
-    service react(internet)[React / Vite] in frontend
-    service fastapi(server)[FastAPI] in backend
+    subgraph Backend [Application Layer]
+        FastAPI[FastAPI]
+    end
     
-    service sqlite(database)[SQLite DB] in ai
-    service chroma(database)[ChromaDB] in ai
-    service sentencetransformer(disk)[Sentence Transformers] in ai
-    service ollama(disk)[Ollama LLM] in ai
+    subgraph AI [Data & AI Layer]
+        SQLite[(SQLite DB)]
+        Chroma[(ChromaDB)]
+        Embedder[Sentence Transformers]
+        Ollama[Ollama LLM]
+    end
 
-    react:R -- L:fastapi
-    fastapi:B -- T:sqlite
-    fastapi:R -- L:chroma
-    fastapi:B -- T:sentencetransformer
-    fastapi:R -- L:ollama
+    React <-->|REST API| FastAPI
+    FastAPI <-->|SQL| SQLite
+    FastAPI <-->|gRPC/HTTP| Chroma
+    FastAPI <-->|Local Inference| Embedder
+    FastAPI <-->|Local API| Ollama
 ```
 
 The system is composed of three main layers:
