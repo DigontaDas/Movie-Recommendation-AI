@@ -443,7 +443,7 @@ export default function MovieDetailModal({
                       fontSize: 16,
                     }}
                   >
-                    {score.toFixed(1)} Match
+                    {score.toFixed(1)} Rating
                   </span>
                 )}
                 <span
