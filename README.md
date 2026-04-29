@@ -30,11 +30,11 @@ For an in-depth breakdown of the system design, data flow, and components, pleas
 
 ```mermaid
 flowchart TD
-    A[User Query] -->|e.g. "animated movie for kids"| B[Sentence-Transformer]
+    A[User Query] -->|e.g. animated movie for kids| B[Sentence-Transformer]
     B -->|Generates Embeddings| C[(ChromaDB Vector Search)]
     C -->|Top K Candidates| D{Ollama LLaMA}
-    D -->|Reranks & Explains| E[FastAPI]
-    E -->|JSON Response| F[Frontend / User]
+    D -->|Reranks and Explains| E[FastAPI]
+    E -->|JSON Response| F[Frontend or User]
 ```
 
 ---
