@@ -12,13 +12,11 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download embedding model
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
-
-# Copy source code
+# Copy source code and pre-indexed database
 COPY src ./src
 COPY scripts ./scripts
 COPY data ./data
+COPY chroma_storage ./chroma_storage
 
 # Install the package or just add to PYTHONPATH
 ENV PYTHONPATH=/app:/app/src
