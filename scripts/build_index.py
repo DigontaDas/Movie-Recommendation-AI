@@ -30,13 +30,8 @@ def build_idx(recreate: bool = False) -> None:
 
     log.info("loading")
     df = load_processed(settings.data_processed_dir)
-    records = df.to_dict(orient = "records")
-    texts = df["text_blob"].tolist()
+    records = df.to_dict(orient="records")
     log.info(f"loaded {len(records)} movie records")
-
-    log.info("embedding")
-    embedder = Embedder()
-    vectors = embedder.encode(texts)
 
     log.info("chromadb connection and collection")
     client = make_client()
@@ -44,24 +39,35 @@ def build_idx(recreate: bool = False) -> None:
         log.info("delete existing collection")
         try:
             client.delete_collection(settings.chroma_collection_name)
-            log.info("collection deleted", collection=settings.chroma_collection_collection_name)
+            log.info("collection deleted", collection=settings.chroma_collection_name)
         except Exception:
             pass
     
     collection = ensure_collection(client)
 
-
-    log.info("uploading to chromadb")
-    upload_movies(collection, records, vectors)
+    log.info("embedding and uploading in batches (memory-safe)")
+    embedder = Embedder()
+    # Batch size of 200 is safe for 512MB RAM with MiniLM model
+    batch_size = 200
     
+    for i in range(0, len(records), batch_size):
+        end = min(i + batch_size, len(records))
+        batch_records = records[i:end]
+        batch_texts = [str(r.get("text_blob", "")) for r in batch_records]
+        
+        log.info(f"processing batch {i} to {end} of {len(records)}")
+        # Encode only this batch
+        batch_vectors = embedder.encode(batch_texts)
+        # Upload only this batch
+        upload_movies(collection, batch_records, batch_vectors)
+
     final_count = collection.count()
     log.info("idx build done",
              collection=settings.chroma_collection_name,
              vectors_count=final_count,
-             dimension=embedder,
     )
 
-    print(f"\nIdx built with \nvector count{final_count} \ndimension {embedder.dimension} and \ncollection '{settings.chroma_collection_name}'.")
+    print(f"\nIdx built with \nvector count {final_count} \ncollection '{settings.chroma_collection_name}'.")
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build ChromaDB movie idx")
