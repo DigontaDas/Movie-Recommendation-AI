@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = Field("http://localhost:11434")
     ollama_model: str = Field("llama3.1:8b")
     ollama_timeout: int = Field(120)
+    enable_ollama: bool = Field(True)
 
     embedding_model: str = Field("sentence-transformers/all-MiniLM-L6-v2")
     embedding_batch_size: int = Field(64)
@@ -104,6 +105,11 @@ class Settings(BaseSettings):
             and self.cloudinary_api_key
             and self.cloudinary_api_secret
         )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def transformer_cache_dir(self) -> Path:
+        return self.models_dir / "cache"
 
     @computed_field  # type: ignore[misc]
     @property

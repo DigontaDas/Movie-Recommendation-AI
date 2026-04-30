@@ -227,6 +227,11 @@ def rerank(query: str, candidates: list[dict], top_n: int = 5) -> list[dict]:
     if not candidates:
         return []
 
+    # Skip Ollama if disabled in settings (e.g. for production free tier)
+    if not SETTINGS.enable_ollama:
+        print("[rerank] Ollama is disabled. Using fallback semantic results.")
+        return _fallback_results(candidates, top_n)
+
     prompt = _build_prompt(query, candidates, top_n)
 
     try:

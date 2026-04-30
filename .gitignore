@@ -33,14 +33,16 @@ frontend/.vite/
 
 # Env
 .env
+
+# Env
+.env
 .env.example
 
 # Data / models / vector db storage (DON'T COMMIT)
 data/external/
 data/raw/
 data/interim/
-data/processed/
-models/
+
 qdrant_storage/
 chroma_storage/
 

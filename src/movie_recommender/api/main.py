@@ -12,12 +12,39 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from movie_recommender.config import get_settings
+settings = get_settings()
+
+import os
+os.environ["SENTENCE_TRANSFORMERS_HOME"] = str(settings.transformer_cache_dir)
+# Ensure the directory exists
+settings.transformer_cache_dir.mkdir(parents=True, exist_ok=True)
+
 from movie_recommender.db.store import DEFAULT_PROFILE_ID, get_store
+
+from contextlib import asynccontextmanager
+from movie_recommender.vector_db.chroma_client import make_client, ensure_collection
+from scripts.build_index import build_idx
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Check if index needs building
+    try:
+        client = make_client()
+        collection = ensure_collection(client)
+        if collection.count() == 0:
+            print("ChromaDB collection is empty. Building index...")
+            build_idx()
+        else:
+            print(f"ChromaDB collection already has {collection.count()} documents.")
+    except Exception as e:
+        print(f"Error checking/building index: {e}")
+    yield
 
 app = FastAPI(
     title="Movie Recommendation AI",
     description="Vector search + LLM reranking pipeline exposed as a REST API.",
     version="2.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
