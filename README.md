@@ -1,6 +1,12 @@
 # 🎬 Movie Recommendation AI
 
-![Movie Man](https://github.com/user-attachments/assets/d3e41f90-23e2-4526-8f40-0b924ce84ce5)
+## Overview
+
+<p align="center">
+  <img src="docs/showcase/showcase.webp" alt="Animated tour of the Movie Man interface" width="960" />
+</p>
+
+<p align="center"><sub>Home · Genre discovery · Sign in · Sign up</sub></p>
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
